@@ -44,7 +44,7 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
-    const authHeader = request.headers.get('authorization')
+    const authHeader = request.headers.get('Authorization')
     const token = authHeader ? authHeader.replace(/^Bearer\s+/i, '') : ''
 
     if (!token) {
@@ -83,7 +83,7 @@ export async function POST(request) {
 
 export async function DELETE(request) {
   try {
-    const authHeader = request.headers.get('authorization')
+    const authHeader = request.headers.get('Authorization')
     const token = authHeader ? authHeader.replace(/^Bearer\s+/i, '') : ''
 
     if (!token) {
