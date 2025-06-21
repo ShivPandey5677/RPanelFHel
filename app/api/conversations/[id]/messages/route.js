@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server'
-import { verifyToken, supabaseAdmin } from '@/lib/auth'
+import { getTokenFromRequest, verifyToken } from '@/lib/auth'
+import { supabaseAdmin } from '@/lib/supabase'
 import { FacebookAPI } from '@/lib/facebook'
 
 export async function GET(request, { params }) {
   try {
-    const authHeader = request.headers.get('authorization')
-    const token = authHeader?.replace('Bearer ', '')
+    const token = getTokenFromRequest(request)
 
     if (!token) {
       return NextResponse.json(
@@ -22,20 +22,19 @@ export async function GET(request, { params }) {
       )
     }
 
-    const conversationId = params.id
-
-    // Fetch messages from database
-    const { data: messages, error: msgError } = await supabaseAdmin
+    const { data: messages, error } = await supabaseAdmin
       .from('messages')
       .select('*')
-      .eq('conversation_id', conversationId)
+      .eq('conversation_id', params.id)
       .order('created_at', { ascending: true })
-    if (msgError) throw msgError
+
+    if (error) throw error
+
     return NextResponse.json({ messages })
   } catch (error) {
-    console.error('Get messages error:', error)
+    console.error('Error fetching messages:', error)
     return NextResponse.json(
-      { error: 'Failed to get messages' },
+      { error: 'Failed to fetch messages' },
       { status: 500 }
     )
   }
@@ -43,8 +42,7 @@ export async function GET(request, { params }) {
 
 export async function POST(request, { params }) {
   try {
-    const authHeader = request.headers.get('authorization')
-    const token = authHeader?.replace('Bearer ', '')
+    const token = getTokenFromRequest(request)
 
     if (!token) {
       return NextResponse.json(
@@ -62,50 +60,51 @@ export async function POST(request, { params }) {
     }
 
     const { message } = await request.json()
-    const conversationId = params.id
-
-    // Save the message in DB
-    const { data: msgInsert, error: insertError } = await supabaseAdmin
-      .from('messages')
-      .insert({
-        conversation_id: conversationId,
-        sender_id: decoded.userId,
-        sender_name: 'Agent',
-        body: message
-      })
-      .select()
-      .single()
-    if (insertError) throw insertError
-
-    // Get conversation and page token
-    const { data: conv, error: convError } = await supabaseAdmin
-      .from('conversations')
-      .select('page_id, customer_id')
-      .eq('id', conversationId)
-      .single()
-    if (convError) throw convError
-
-    const { data: pageRow, error: pageError } = await supabaseAdmin
-      .from('facebook_pages')
-      .select('access_token')
-      .eq('user_id', decoded.userId)
-      .eq('page_id', conv.page_id)
-      .single()
-    if (pageError) throw pageError
-
-    // Send via FB
-    try {
-      const fb = new FacebookAPI(pageRow.access_token)
-      await fb.sendMessage(conv.customer_id, message)
-    } catch (fbErr) {
-      console.error('FB send error', fbErr)
+    if (!message) {
+      return NextResponse.json(
+        { error: 'Message is required' },
+        { status: 400 }
+      )
     }
 
-    console.log(`Sending message "${message}" to conversation ${conversationId}`)
+    // Get conversation to find page_id
+    const { data: conversation, error: convError } = await supabaseAdmin
+      .from('conversations')
+      .select('page_id, customer_id')
+      .eq('id', params.id)
+      .single()
 
-    return NextResponse.json({ message: 'Message sent successfully', id: msgInsert.id })
+    if (convError || !conversation) {
+      throw new Error('Conversation not found')
+    }
+
+    // Save to database
+    const { data: savedMessage, error: saveError } = await supabaseAdmin
+      .from('messages')
+      .insert([
+        {
+          conversation_id: params.id,
+          sender_type: 'agent',
+          body: message,
+          customer_id: conversation.customer_id,
+          page_id: conversation.page_id
+        }
+      ])
+      .select()
+      .single()
+
+    if (saveError) throw saveError
+
+    // Send via Facebook API
+    const fbApi = new FacebookAPI()
+    await fbApi.sendMessage({
+      recipient: { id: conversation.customer_id },
+      message: { text: message }
+    })
+
+    return NextResponse.json({ message: savedMessage })
   } catch (error) {
-    console.error('Send message error:', error)
+    console.error('Error sending message:', error)
     return NextResponse.json(
       { error: 'Failed to send message' },
       { status: 500 }

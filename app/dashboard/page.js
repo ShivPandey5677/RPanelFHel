@@ -38,23 +38,26 @@ export default function DashboardPage() {
   }
 
   const loadConversations = async () => {
-    const token = localStorage.getItem('token')
     try {
+      const token = localStorage.getItem('token')
       const response = await fetch('/api/conversations', {
+        credentials: 'include',
         headers: {
+          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         }
       })
-      
       if (response.ok) {
         const data = await response.json()
         setConversations(data.conversations || [])
         if (data.conversations && data.conversations.length > 0) {
           setSelectedConversation(data.conversations[0])
         }
+      } else {
+        console.error('Failed to fetch conversations')
       }
     } catch (error) {
-      console.error('Error loading conversations:', error)
+      console.error('Error fetching conversations:', error)
     } finally {
       setLoading(false)
     }

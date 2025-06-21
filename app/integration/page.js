@@ -24,7 +24,9 @@ export default function IntegrationPage() {
 
     try {
       const response = await fetch('/api/auth/me', {
+        credentials: 'include',
         headers: {
+          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         }
       })
@@ -46,11 +48,11 @@ export default function IntegrationPage() {
     
     try {
       const response = await fetch('/api/facebook/page', {
+        credentials: 'include',
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include' // Important for sending cookies
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
       })
       
       console.log('Facebook page response status:', response.status)
@@ -80,7 +82,9 @@ export default function IntegrationPage() {
     try {
       const response = await fetch('/api/facebook/page', {
         method: 'DELETE',
+        credentials: 'include',
         headers: {
+          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         }
       })
