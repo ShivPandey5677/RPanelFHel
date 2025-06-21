@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server'
-import { verifyToken } from '@/lib/auth'
+import { getTokenFromRequest, verifyToken } from '@/lib/auth'
 import { supabase } from '@/lib/supabase'
 
 export async function GET(request) {
   try {
-    const authHeader = request.headers.get('authorization')
-    console.log(authHeader)
-    const token = authHeader ? authHeader.replace(/^Bearer\s+/i, '') : ''
-    console.log(token)
+    
+    
+    const token = getTokenFromRequest(request)
+    
     if (!token) {
       return NextResponse.json(
         { error: 'No token provided' },
@@ -45,10 +45,10 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
-    const authHeader = request.headers.get('authorization')
-    console.log(authHeader)
-    const token = authHeader ? authHeader.replace(/^Bearer\s+/i, '') : ''
-    console.log(token)
+    
+    
+    const token = getTokenFromRequest(request)
+    
     if (!token) {
       return NextResponse.json({ error: 'No token provided' }, { status: 401 })
     }
@@ -85,10 +85,10 @@ export async function POST(request) {
 
 export async function DELETE(request) {
   try {
-    const authHeader = request.headers.get('authorization')
-    console.log(authHeader)
-    const token = authHeader ? authHeader.replace(/^Bearer\s+/i, '') : ''
-    console.log(token)
+    
+    
+    const token = getTokenFromRequest(request)
+    
     if (!token) {
       return NextResponse.json(
         { error: 'No token provided' },

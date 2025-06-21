@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { verifyToken, supabaseAdmin } from '@/lib/auth'
+import { getTokenFromRequest, verifyToken, supabaseAdmin } from '@/lib/auth'
 import { FacebookAPI } from '@/lib/facebook'
 
 // Opt out of static generation
@@ -9,8 +9,7 @@ export const fetchCache = 'force-no-store'
 
 export async function GET(request) {
   try {
-    const authHeader = request.headers.get('authorization')
-    const token = authHeader?.replace('Bearer ', '')
+    const token = getTokenFromRequest(request)
 
     if (!token) {
       return NextResponse.json(

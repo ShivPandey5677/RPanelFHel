@@ -1,12 +1,9 @@
 import { NextResponse } from 'next/server'
-import { verifyToken } from '@/lib/auth'
+import { getTokenFromRequest, verifyToken } from '@/lib/auth'
 
 export async function GET(request, { params }) {
   try {
-    const authHeader = request.headers.get('authorization')
-    console.log(authHeader)
-    const token = authHeader?.replace('Bearer ', '')
-    console.log(token)
+    const token = getTokenFromRequest(request)
     if (!token) {
       return NextResponse.json(
         { error: 'No token provided' },
