@@ -44,15 +44,29 @@ export async function POST(request) {
     // Get the session
     const { data: { session } } = await supabase.auth.getSession()
 
-    return NextResponse.json({
+    const res = NextResponse.json({
       message: 'Login successful',
-      token: session.access_token, // Use Supabase's JWT
-      user: { 
-        id: userData.id, 
-        name: userData.name, 
-        email: userData.email 
+      token: session.access_token,
+      user: {
+        id: userData.id,
+        name: userData.name,
+        email: userData.email
       }
     })
+
+    // Also store the JWT in an HttpOnly cookie so that normal page navigations
+    // automatically include it in requests to /api/* routes.
+    res.cookies.set({
+      name: 'token',
+      value: session.access_token,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7 // 7 days
+    })
+
+    return res
   } catch (error) {
     console.error('Login error:', error)
     return NextResponse.json(
