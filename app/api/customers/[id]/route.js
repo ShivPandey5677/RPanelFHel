@@ -3,7 +3,7 @@ import { verifyToken } from '@/lib/auth'
 
 export async function GET(request, { params }) {
   try {
-    const authHeader = request.headers.get('authorization')
+    const authHeader = request.headers.get('Authorization')
     const token = authHeader?.replace('Bearer ', '')
 
     if (!token) {
