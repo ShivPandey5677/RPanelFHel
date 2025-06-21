@@ -42,16 +42,26 @@ export default function IntegrationPage() {
 
   const loadFacebookPage = async () => {
     const token = localStorage.getItem('token')
+    console.log('Loading Facebook page with token:', token ? '[token exists]' : 'no token')
+    
     try {
       const response = await fetch('/api/facebook/page', {
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include' // Important for sending cookies
       })
+      
+      console.log('Facebook page response status:', response.status)
       
       if (response.ok) {
         const data = await response.json()
+        console.log('Facebook page data:', data)
         setFbPage(data.page)
+      } else {
+        const errorData = await response.text()
+        console.error('Error response:', errorData)
       }
     } catch (error) {
       console.error('Error loading Facebook page:', error)
