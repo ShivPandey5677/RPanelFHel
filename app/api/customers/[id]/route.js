@@ -3,9 +3,10 @@ import { verifyToken } from '@/lib/auth'
 
 export async function GET(request, { params }) {
   try {
-    const authHeader = request.headers.get('Authorization')
+    const authHeader = request.headers.get('authorization')
+    console.log(authHeader)
     const token = authHeader?.replace('Bearer ', '')
-
+    console.log(token)
     if (!token) {
       return NextResponse.json(
         { error: 'No token provided' },
